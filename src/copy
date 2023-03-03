@@ -1,0 +1,125 @@
+import React, { useState } from "react";
+import "./survey.css";
+import { v4 as uuidv4 } from "uuid";
+import AWS from "aws-sdk";
+
+function App() {
+  const [firstName, setFirstName] = useState("");
+  const [role, setRole] = useState("");
+  const [feedback, setFeedback] = useState("");
+  const [experience, setExperience] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const s3 = new AWS.S3({
+      accessKeyId: process.env.REACT_APP_AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.REACT_APP_AWS_SECRET_ACCESS_KEY,
+      region: process.env.REACT_APP_AWS_REGION,
+    });
+
+    const uuid = uuidv4();
+
+    const params = {
+      Bucket: process.env.REACT_APP_S3_BUCKET_NAME,
+      Key: `${uuid}.json`,
+      Body: JSON.stringify({
+        firstName: firstName,
+        role: role,
+        feedback: feedback,
+        experience: experience,
+      }),
+    };
+
+    s3.upload(params, function (err, data) {
+      if (err) {
+        console.log(err);
+      } else {
+        console.log(`File uploaded successfully. ${data.Location}`);
+      }
+    });
+
+    setFirstName("");
+    setRole("");
+    setFeedback("");
+    setExperience("");
+
+    alert("Thank you!");
+  };
+
+  return (
+    <div className="App">
+      <h1>Set B Survey</h1>
+      <form onSubmit={handleSubmit}>
+        <label>
+          What is your current role?
+          <input
+            type="text"
+            name="role"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            placeholder="Enter your role"
+            required
+          />
+        </label>
+        <label>
+          How would you rate your experience with Databricks?
+          <div>
+            <input
+              type="radio"
+              id="experience1"
+              name="experience"
+              value="Excellent"
+              onChange={(e) => setExperience(e.target.value)}
+              required
+            />
+            <label htmlFor="experience1">Excellent</label>
+          </div>
+          <div>
+            <input
+              type="radio"
+              id="experience2"
+              name="experience"
+              value="Good"
+              onChange={(e) => setExperience(e.target.value)}
+            />
+            <label htmlFor="experience2">Good</label>
+          </div>
+          <div>
+            <input
+              type="radio"
+              id="experience3"
+              name="experience"
+              value="Fair"
+              onChange={(e) => setExperience(e.target.value)}
+            />
+            <label htmlFor="experience3">Fair</label>
+          </div>
+          <div>
+            <input
+              type="radio"
+              id="experience4"
+              name="experience"
+              value="Poor"
+              onChange={(e) => setExperience(e.target.value)}
+            />
+            <label htmlFor="experience4">Poor</label>
+          </div>
+        </label>
+        <label>
+          Any other feedback you would like to provide?
+          <textarea
+            name="feedback"
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            placeholder="Enter your feedback"
+            rows="5"
+          ></textarea>
+        </label>
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+  );
+}
+
+export default App;
